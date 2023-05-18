@@ -48,12 +48,12 @@ pub fn parse(source: &str) -> Vec<Command> {
         }
     }
 
-    output
+    return output
 }
 
 pub fn interpret(commands: &[Command]) {
-    let mut memory = [0_u8; 30_000];
-    let mut pointer = 0_usize;
+    let mut memory = [0u8; 30_000];
+    let mut pointer = 0usize;
     let mut command_index = 0;
 
     while command_index < commands.len() {
@@ -82,7 +82,7 @@ pub fn interpret(commands: &[Command]) {
 
             Command::InputCell => {
                 let mut buf = [0; 1];
-                (&mut std::io::stdin()).read(&mut buf).unwrap();
+                std::io::stdin().read(&mut buf).unwrap();
                 memory[pointer] = buf[0];
             }
 

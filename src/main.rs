@@ -1,3 +1,10 @@
+#![warn(
+    clippy::all,
+    clippy::restriction,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::cargo,
+)]
 use std::env;
 use std::fs;
 
@@ -18,7 +25,7 @@ fn main() {
             return;
         }
     };
-    
+
     let commands = brainfuck::parse(&source);
     
     brainfuck::interpret(&commands);
