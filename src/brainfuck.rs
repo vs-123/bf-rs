@@ -1,5 +1,5 @@
-use std::io::{Read, stdout};
 use std::io::{self, Write};
+use std::io::{stdout, Read};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
@@ -7,7 +7,7 @@ pub enum Command {
     Decrement,
     MoveLeft,
     MoveRight,
-    LoopOpen(usize), // usize -> End of loop
+    LoopOpen(usize),  // usize -> End of loop
     LoopClose(usize), // usize -> Start of loop
     PrintCell,
     InputCell,
@@ -86,7 +86,7 @@ pub fn interpret(commands: &[Command]) {
             Command::PrintCell => {
                 stdout.write(&[memory[pointer]]).and(stdout.flush()).ok();
             }
-            
+
             Command::InputCell => {
                 stdin.read(&mut memory[pointer..=pointer]).ok();
             }
