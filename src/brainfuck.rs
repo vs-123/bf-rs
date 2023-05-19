@@ -1,4 +1,5 @@
-use std::io::Read;
+use std::io::{Read, stdout};
+use std::io::{self, Write};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
@@ -54,10 +55,13 @@ pub fn parse(source: &str) -> Vec<Command> {
 }
 
 pub fn interpret(commands: &[Command]) {
-    let mut memory = [0_u8; u16::MAX as usize];
+    let mut memory = [0_u8; 30_000];
     let mut pointer = 0_usize;
     let mut command_index = 0;
     let commands_len = commands.len();
+
+    let mut stdout = io::stdout();
+    let mut stdin = io::stdin();
 
     while command_index < commands_len {
         let command = commands[command_index];
@@ -80,13 +84,11 @@ pub fn interpret(commands: &[Command]) {
             }
 
             Command::PrintCell => {
-                print!("{}", memory[pointer] as char);
+                stdout.write(&[memory[pointer]]).and(stdout.flush()).ok();
             }
-
+            
             Command::InputCell => {
-                let mut buf = [0; 1];
-                std::io::stdin().read(&mut buf).unwrap();
-                memory[pointer] = buf[0];
+                stdin.read(&mut memory[pointer..=pointer]).ok();
             }
 
             Command::LoopOpen(loop_end) => {
