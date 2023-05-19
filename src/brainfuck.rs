@@ -1,5 +1,4 @@
-use std::io::{self, Write};
-use std::io::{stdout, Read};
+use std::io::{self, stdout, Read, Write};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
