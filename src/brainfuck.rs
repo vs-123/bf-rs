@@ -1,6 +1,6 @@
 use std::io::Read;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Command {
     Increment,
     Decrement,
@@ -13,23 +13,25 @@ pub enum Command {
 }
 
 pub fn parse(source: &str) -> Vec<Command> {
-    let mut output = Vec::<Command>::new();
+    let mut output = Vec::<Command>::with_capacity(source.len());
     let mut loop_stack = Vec::new();
+    let source_bytes = source.as_bytes();
+    let source_bytes_length = source_bytes.len();
 
-    for (character_index, character) in source.chars().enumerate() {
-        match character {
-            '+' => output.push(Command::Increment),
-            '-' => output.push(Command::Decrement),
-            '<' => output.push(Command::MoveLeft),
-            '>' => output.push(Command::MoveRight),
+    for character_index in 0..source_bytes_length {
+        match source_bytes[character_index] {
+            b'+' => output.push(Command::Increment),
+            b'-' => output.push(Command::Decrement),
+            b'<' => output.push(Command::MoveLeft),
+            b'>' => output.push(Command::MoveRight),
 
-            '[' => {
+            b'[' => {
                 let loop_start = output.len();
                 output.push(Command::LoopOpen(character_index));
                 loop_stack.push(loop_start);
             }
 
-            ']' => {
+            b']' => {
                 if let Some(loop_start) = loop_stack.pop() {
                     output[loop_start] = Command::LoopOpen(output.len());
                     output.push(Command::LoopClose(loop_start));
@@ -40,24 +42,25 @@ pub fn parse(source: &str) -> Vec<Command> {
                 }
             }
 
-            '.' => output.push(Command::PrintCell),
-            ',' => output.push(Command::InputCell),
+            b'.' => output.push(Command::PrintCell),
+            b',' => output.push(Command::InputCell),
 
             // Ignore other characters
             _ => {}
         }
     }
 
-    return output
+    output
 }
 
 pub fn interpret(commands: &[Command]) {
-    let mut memory = [0u8; 30_000];
-    let mut pointer = 0usize;
+    let mut memory = [0_u8; u16::MAX as usize];
+    let mut pointer = 0_usize;
     let mut command_index = 0;
+    let commands_len = commands.len();
 
-    while command_index < commands.len() {
-        let command = commands[command_index].clone();
+    while command_index < commands_len {
+        let command = commands[command_index];
 
         match command {
             Command::Increment => {
