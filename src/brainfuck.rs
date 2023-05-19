@@ -1,11 +1,11 @@
-use std::io::{self, stdout, Read, Write};
+use std::io::{self, Read, Write};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
-    Increment,
-    Decrement,
-    MoveLeft,
-    MoveRight,
+    Increment(usize),
+    Decrement(usize),
+    MoveLeft(usize),
+    MoveRight(usize),
     LoopOpen(usize),  // usize -> End of loop
     LoopClose(usize), // usize -> Start of loop
     PrintCell,
@@ -16,14 +16,42 @@ pub fn parse(source: &str) -> Vec<Command> {
     let mut output = Vec::<Command>::with_capacity(source.len());
     let mut loop_stack = Vec::new();
     let source_bytes = source.as_bytes();
-    let source_bytes_length = source_bytes.len();
 
-    for character_index in 0..source_bytes_length {
-        match source_bytes[character_index] {
-            b'+' => output.push(Command::Increment),
-            b'-' => output.push(Command::Decrement),
-            b'<' => output.push(Command::MoveLeft),
-            b'>' => output.push(Command::MoveRight),
+    let mut count = 0;
+
+    for (character_index, character) in source_bytes.iter().enumerate() {
+        match character {
+            b'+' => {
+                if let Some(Command::Increment(count)) = output.last_mut() {
+                    *count += 1;
+                } else {
+                    output.push(Command::Increment(1));
+                }
+            }
+
+            b'-' => {
+                if let Some(Command::Decrement(count)) = output.last_mut() {
+                    *count += 1;
+                } else {
+                    output.push(Command::Decrement(1));
+                }
+            }
+
+            b'<' => {
+                if let Some(Command::MoveLeft(count)) = output.last_mut() {
+                    *count += 1;
+                } else {
+                    output.push(Command::MoveLeft(1));
+                }
+            }
+
+            b'>' => {
+                if let Some(Command::MoveRight(count)) = output.last_mut() {
+                    *count += 1;
+                } else {
+                    output.push(Command::MoveRight(1));
+                }
+            }
 
             b'[' => {
                 let loop_start = output.len();
@@ -46,7 +74,7 @@ pub fn parse(source: &str) -> Vec<Command> {
             b',' => output.push(Command::InputCell),
 
             // Ignore other characters
-            _ => {}
+            _ => {},
         }
     }
 
@@ -66,20 +94,20 @@ pub fn interpret(commands: &[Command]) {
         let command = commands[command_index];
 
         match command {
-            Command::Increment => {
-                memory[pointer] = memory[pointer].wrapping_add(1);
+            Command::Increment(count) => {
+                memory[pointer] = memory[pointer].wrapping_add(count as u8);
             }
 
-            Command::Decrement => {
-                memory[pointer] = memory[pointer].wrapping_sub(1);
+            Command::Decrement(count) => {
+                memory[pointer] = memory[pointer].wrapping_sub(count as u8);
             }
 
-            Command::MoveLeft => {
-                pointer = pointer.saturating_sub(1);
+            Command::MoveLeft(count) => {
+                pointer = pointer.saturating_sub(count);
             }
 
-            Command::MoveRight => {
-                pointer = pointer.saturating_add(1);
+            Command::MoveRight(count) => {
+                pointer = pointer.saturating_add(count);
             }
 
             Command::PrintCell => {
