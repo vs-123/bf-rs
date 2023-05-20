@@ -82,7 +82,7 @@ pub fn parse(source: &str) -> Vec<Command> {
 
 pub fn interpret(commands: &[Command]) {
     let mut memory = [0_u8; 30_000];
-    let mut pointer = 0_usize;
+    let mut pointer: isize = 0;
     let commands_len = commands.len();
 
     let mut stdout = io::stdout();
@@ -90,37 +90,32 @@ pub fn interpret(commands: &[Command]) {
 
     let mut command_index = 0;
     while command_index < commands_len {
-        let command = &commands[command_index];
+        let command = unsafe { commands.get_unchecked(command_index) };
 
         match command {
             Command::Increment(count) => {
-                memory[pointer] = (memory[pointer] + *count as u8) & 0xFF;
+                let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
+                *mem_val = (*mem_val).wrapping_add(*count as u8);
             }
-
-            Command::MoveLeft(count) => {
-                pointer = pointer.saturating_sub(*count);
-            }
-
-            Command::MoveRight(count) => {
-                pointer = pointer.saturating_add(*count);
-            }
-
+            Command::MoveLeft(count) => pointer -= *count as isize,
+            Command::MoveRight(count) => pointer += *count as isize,
             Command::PrintCell => {
-                stdout.write(&[memory[pointer]]).and(stdout.flush()).ok();
+                let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
+                stdout.write(&[*mem_val]).and(stdout.flush()).ok();
             }
-
             Command::InputCell => {
-                stdin.read(&mut memory[pointer..=pointer]).ok();
+                let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
+                stdin.read(&mut [*mem_val]).ok();
             }
-
             Command::LoopOpen(loop_end) => {
-                if memory[pointer] == 0 {
+                let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
+                if *mem_val == 0 {
                     command_index = *loop_end;
                 }
             }
-
             Command::LoopClose(loop_start) => {
-                if memory[pointer] != 0 {
+                let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
+                if *mem_val != 0 {
                     command_index = *loop_start;
                 }
             }
@@ -129,3 +124,4 @@ pub fn interpret(commands: &[Command]) {
         command_index += 1;
     }
 }
+
