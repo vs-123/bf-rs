@@ -3,8 +3,7 @@ use std::io::{self, Read, Write};
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
     Increment(isize),
-    MoveLeft(usize),
-    MoveRight(usize),
+    MovePointer(isize),
     LoopOpen(usize),  // usize -> End of loop
     LoopClose(usize), // usize -> Start of loop
     PrintCell,
@@ -15,8 +14,6 @@ pub fn parse(source: &str) -> Vec<Command> {
     let mut output = Vec::<Command>::with_capacity(source.len());
     let mut loop_stack = Vec::new();
     let source_bytes = source.as_bytes();
-
-    let mut count = 0;
 
     for (character_index, character) in source_bytes.iter().enumerate() {
         match character {
@@ -37,18 +34,18 @@ pub fn parse(source: &str) -> Vec<Command> {
             }
 
             b'<' => {
-                if let Some(Command::MoveLeft(count)) = output.last_mut() {
-                    *count += 1;
+                if let Some(Command::MovePointer(count)) = output.last_mut() {
+                    *count -= 1;
                 } else {
-                    output.push(Command::MoveLeft(1));
+                    output.push(Command::MovePointer(-1));
                 }
             }
 
             b'>' => {
-                if let Some(Command::MoveRight(count)) = output.last_mut() {
+                if let Some(Command::MovePointer(count)) = output.last_mut() {
                     *count += 1;
                 } else {
-                    output.push(Command::MoveRight(1));
+                    output.push(Command::MovePointer(1));
                 }
             }
 
@@ -97,13 +94,15 @@ pub fn interpret(commands: &[Command]) {
                 let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
                 *mem_val = mem_val.wrapping_add(*count as u8);
             }
-            Command::MoveLeft(count) => pointer -= *count as isize,
-            Command::MoveRight(count) => pointer += *count as isize,
+
+            Command::MovePointer(count) => pointer += *count,
+
             Command::PrintCell => {
                 let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
                 let output = if *mem_val == 10 { b'\n' } else { *mem_val };
                 stdout.write(&[output]).and(stdout.flush()).ok();
             }
+
             Command::InputCell => {
                 let mut input = [0_u8; 1];
                 match stdin.read(&mut input) {
@@ -121,12 +120,14 @@ pub fn interpret(commands: &[Command]) {
                     }
                 }
             }
+
             Command::LoopOpen(loop_end) => {
                 let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
                 if *mem_val == 0 {
                     command_index = *loop_end;
                 }
             }
+
             Command::LoopClose(loop_start) => {
                 let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
                 if *mem_val != 0 {
