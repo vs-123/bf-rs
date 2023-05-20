@@ -73,12 +73,13 @@ pub fn parse(source: &str) -> Vec<Command> {
             b',' => output.push(Command::InputCell),
 
             // Ignore other characters
-            _ => {},
+            _ => {}
         }
     }
 
     output
 }
+
 pub fn interpret(commands: &[Command]) {
     let mut memory = [0_u8; 30_000];
     let mut pointer: isize = 0;
@@ -100,11 +101,7 @@ pub fn interpret(commands: &[Command]) {
             Command::MoveRight(count) => pointer += *count as isize,
             Command::PrintCell => {
                 let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
-                let output = if *mem_val == 10 {
-                    b'\n'
-                } else {
-                    *mem_val
-                };
+                let output = if *mem_val == 10 { b'\n' } else { *mem_val };
                 stdout.write(&[output]).and(stdout.flush()).ok();
             }
             Command::InputCell => {
