@@ -79,7 +79,6 @@ pub fn parse(source: &str) -> Vec<Command> {
 
     output
 }
-
 pub fn interpret(commands: &[Command]) {
     let mut memory = [0_u8; 30_000];
     let mut pointer: isize = 0;
@@ -101,11 +100,29 @@ pub fn interpret(commands: &[Command]) {
             Command::MoveRight(count) => pointer += *count as isize,
             Command::PrintCell => {
                 let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
-                stdout.write(&[*mem_val]).and(stdout.flush()).ok();
+                let output = if *mem_val == 10 {
+                    b'\n'
+                } else {
+                    *mem_val
+                };
+                stdout.write(&[output]).and(stdout.flush()).ok();
             }
             Command::InputCell => {
-                let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
-                stdin.read(&mut [*mem_val]).ok();
+                let mut input = [0_u8; 1];
+                match stdin.read(&mut input) {
+                    Ok(0) => {
+                        // No input provided, set memory cell to 0
+                        let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
+                        *mem_val = 0;
+                    }
+                    Ok(_) => {
+                        let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
+                        *mem_val = if input[0] == b'\n' { 10 } else { input[0] };
+                    }
+                    Err(_) => {
+                        // Error occurred during input, leave memory cell unchanged
+                    }
+                }
             }
             Command::LoopOpen(loop_end) => {
                 let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
