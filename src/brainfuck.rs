@@ -2,8 +2,7 @@ use std::io::{self, Read, Write};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Command {
-    Increment(usize),
-    Decrement(usize),
+    Increment(isize),
     MoveLeft(usize),
     MoveRight(usize),
     LoopOpen(usize),  // usize -> End of loop
@@ -30,10 +29,10 @@ pub fn parse(source: &str) -> Vec<Command> {
             }
 
             b'-' => {
-                if let Some(Command::Decrement(count)) = output.last_mut() {
-                    *count += 1;
+                if let Some(Command::Increment(count)) = output.last_mut() {
+                    *count -= 1;
                 } else {
-                    output.push(Command::Decrement(1));
+                    output.push(Command::Increment(-1));
                 }
             }
 
@@ -84,30 +83,26 @@ pub fn parse(source: &str) -> Vec<Command> {
 pub fn interpret(commands: &[Command]) {
     let mut memory = [0_u8; 30_000];
     let mut pointer = 0_usize;
-    let mut command_index = 0;
     let commands_len = commands.len();
 
     let mut stdout = io::stdout();
     let mut stdin = io::stdin();
 
+    let mut command_index = 0;
     while command_index < commands_len {
-        let command = commands[command_index];
+        let command = &commands[command_index];
 
         match command {
             Command::Increment(count) => {
-                memory[pointer] = memory[pointer].wrapping_add(count as u8);
-            }
-
-            Command::Decrement(count) => {
-                memory[pointer] = memory[pointer].wrapping_sub(count as u8);
+                memory[pointer] = (memory[pointer] + *count as u8) & 0xFF;
             }
 
             Command::MoveLeft(count) => {
-                pointer = pointer.saturating_sub(count);
+                pointer = pointer.saturating_sub(*count);
             }
 
             Command::MoveRight(count) => {
-                pointer = pointer.saturating_add(count);
+                pointer = pointer.saturating_add(*count);
             }
 
             Command::PrintCell => {
@@ -120,13 +115,13 @@ pub fn interpret(commands: &[Command]) {
 
             Command::LoopOpen(loop_end) => {
                 if memory[pointer] == 0 {
-                    command_index = loop_end;
+                    command_index = *loop_end;
                 }
             }
 
             Command::LoopClose(loop_start) => {
                 if memory[pointer] != 0 {
-                    command_index = loop_start;
+                    command_index = *loop_start;
                 }
             }
         }
