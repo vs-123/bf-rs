@@ -63,8 +63,8 @@ pub fn parse(source: &str) -> Vec<Command> {
                     output[loop_start] = Command::LoopOpen(output.len());
                     output.push(Command::LoopClose(loop_start));
                 } else {
-                    println!("\n[Error at command index {}]", output.len());
-                    println!("Unmatched ']'");
+                    eprintln!("\n[Error at command index {}]", output.len());
+                    eprintln!("Unmatched ']'");
                     std::process::exit(1);
                 }
             }
@@ -95,7 +95,7 @@ pub fn interpret(commands: &[Command]) {
         match command {
             Command::Increment(count) => {
                 let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
-                *mem_val = (*mem_val).wrapping_add(*count as u8);
+                *mem_val = mem_val.wrapping_add(*count as u8);
             }
             Command::MoveLeft(count) => pointer -= *count as isize,
             Command::MoveRight(count) => pointer += *count as isize,
@@ -124,4 +124,3 @@ pub fn interpret(commands: &[Command]) {
         command_index += 1;
     }
 }
-
