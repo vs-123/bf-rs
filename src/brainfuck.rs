@@ -111,20 +111,32 @@ pub fn interpret(commands: &[Command]) {
                         let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
                         *mem_val = 0;
                     }
+                    
                     Ok(_) => {
                         let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
                         *mem_val = if input[0] == b'\n' { 10 } else { input[0] };
                     }
-                    Err(_) => {
-                        // Error occurred during input, leave memory cell unchanged
-                    }
+
+                    Err(_) => {}
                 }
             }
 
             Command::LoopOpen(loop_end) => {
-                let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
+                let mem_val: &mut u8 = unsafe { memory.get_unchecked_mut(pointer as usize) };
                 if *mem_val == 0 {
                     command_index = *loop_end;
+                } else {
+                    // Check for clear loop pattern: [-] or [+]
+                    let next_command = unsafe { commands.get_unchecked(command_index + 1) };
+                    if matches!(next_command, Command::Increment(-1) | Command::Increment(1)) {
+                        let next_next_command =
+                            unsafe { commands.get_unchecked(command_index + 2) };
+                        if let Command::LoopClose(_) = next_next_command {
+                            // Set memory cell to 0 after the pattern is detected
+                            *mem_val = 0;
+                            command_index = *loop_end;
+                        }
+                    }
                 }
             }
 
