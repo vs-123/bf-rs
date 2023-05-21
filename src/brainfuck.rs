@@ -111,7 +111,7 @@ pub fn interpret(commands: &[Command]) {
                         let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
                         *mem_val = 0;
                     }
-                    
+
                     Ok(_) => {
                         let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
                         *mem_val = if input[0] == b'\n' { 10 } else { input[0] };
