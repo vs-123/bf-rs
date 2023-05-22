@@ -87,18 +87,18 @@ pub fn interpret(commands: &[Command]) {
 
     let mut command_index = 0;
     while command_index < commands_len {
-        let command = unsafe { commands.get_unchecked(command_index) };
+        let command = commands.get(command_index).unwrap();
 
         match command {
             Command::Increment(count) => {
-                let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
+                let mem_val = &mut memory[pointer as usize];
                 *mem_val = mem_val.wrapping_add(*count as u8);
             }
 
-            Command::MovePointer(count) => pointer += *count,
+            Command::MovePointer(count) => pointer += count,
 
             Command::PrintCell => {
-                let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
+                let mem_val =  &memory[pointer as usize];
                 let output = if *mem_val == 10 { b'\n' } else { *mem_val };
                 stdout.write(&[output]).and(stdout.flush()).ok();
             }
@@ -108,12 +108,12 @@ pub fn interpret(commands: &[Command]) {
                 match stdin.read(&mut input) {
                     Ok(0) => {
                         // No input provided, set memory cell to 0
-                        let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
+                        let mem_val = &mut memory[pointer as usize];
                         *mem_val = 0;
                     }
 
                     Ok(_) => {
-                        let mem_val = unsafe { memory.get_unchecked_mut(pointer as usize) };
+                        let mem_val = &mut memory[pointer as usize];
                         *mem_val = if input[0] == b'\n' { 10 } else { input[0] };
                     }
 
@@ -122,15 +122,14 @@ pub fn interpret(commands: &[Command]) {
             }
 
             Command::LoopOpen(loop_end) => {
-                let mem_val: &mut u8 = unsafe { memory.get_unchecked_mut(pointer as usize) };
+                let mem_val: &mut u8 =  &mut memory[pointer as usize];
                 if *mem_val == 0 {
                     command_index = *loop_end;
                 } else {
                     // Check for clear loop pattern: [-] or [+]
-                    let next_command = unsafe { commands.get_unchecked(command_index + 1) };
+                    let next_command = commands.get(command_index + 1).unwrap();
                     if matches!(next_command, Command::Increment(-1) | Command::Increment(1)) {
-                        let next_next_command =
-                            unsafe { commands.get_unchecked(command_index + 2) };
+                        let next_next_command = commands.get(command_index + 2).unwrap();
                         if let Command::LoopClose(_) = next_next_command {
                             // Set memory cell to 0 after the pattern is detected
                             *mem_val = 0;
@@ -141,7 +140,7 @@ pub fn interpret(commands: &[Command]) {
             }
 
             Command::LoopClose(loop_start) => {
-                let mem_val = unsafe { memory.get_unchecked(pointer as usize) };
+                let mem_val =  &memory[pointer as usize];
                 if *mem_val != 0 {
                     command_index = *loop_start;
                 }
